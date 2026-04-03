@@ -27,8 +27,8 @@ FINAL_THIRD_LINE_X = 80
 matches_data = {
     "Vs Los Angeles": [
         ("PASS WON", 52.52, 13.90, 78.12, 72.42, None),
-        ("PASS WON", 98.73, 43.66, 90.42, 36.84, "videos/Sebas - KP Los Angeles.mp4"),
-        ("PASS WON", 105.55, 22.38, 99.23, 48.98, None),
+        ("PASS WON", 98.73, 43.66, 90.42, 36.84, None),
+        ("PASS WON", 105.55, 22.38, 99.23, 48.98, "videos/Sebas - KP Los Angeles.mp4"),
 
         ("PASS LOST", 72.63, 9.41, 93.08, 18.06, None),
         ("PASS LOST", 105.38, 18.06, 108.37, 30.69, None),
@@ -47,16 +47,17 @@ matches_data = {
         ("PASS LOST", 117.52, 67.59, 105.22, 25.37, None),
     ],
     "Vs Sockers": [
-        ("PASS WON", 114.36, 66.93, 104.38, 42.83, None),
+        ("PASS WON", 114.36, 66.93, 104.38, 42.83, "videos/Sebas - KP Sockers.mp4"),
         ("PASS WON", 70.97, 30.19, 77.79, 41.33, None),
         ("PASS WON", 64.49, 35.35, 71.47, 52.63, None),
         ("PASS WON", 51.52, 26.87, 65.15, 21.05, None),
 
         ("PASS LOST", 110.37, 13.90, 114.03, 46.32, None),
-        ("PASS LOST", 93.25, 73.08, 109.21, 42.83, "videos/Sebas - KP Sockers.mp4"),
+        ("PASS LOST", 93.25, 73.08, 109.21, 42.83, None),
         ("PASS LOST", 79.28, 3.59, 95.24, 36.51, None),
     ],
 }
+
 
 # ==========================
 # Build DataFrames
@@ -257,12 +258,11 @@ col_stats, col_right = st.columns([1, 2], gap="large")
 with col_stats:
     st.subheader("Statistics")
 
-    c1, c2, c3, c4, c5 = st.columns(5)
+    c1, c2, c3, c4 = st.columns(4)
     c1.metric("Total Passes", stats["total_passes"])
     c2.metric("Successful", stats["successful_passes"])
     c3.metric("Accuracy", f'{stats["accuracy_pct"]:.1f}%')
-    c4.metric("Unsuccessful", stats["unsuccessful_passes"])
-    c5.metric("Key Passes", stats["key_passes"])
+    c4.metric("Key Passes", stats["key_passes"])
 
     st.divider()
 
