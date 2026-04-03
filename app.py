@@ -22,8 +22,7 @@ st.caption("Clique na bolinha no início do passe para ver o vídeo (se houver).
 FINAL_THIRD_LINE_X = 80
 
 # ==========================
-# DATA (respeitando exatamente o que você passou)
-# type, x_start, y_start, x_end, y_end, video
+# DATA
 # ==========================
 matches_data = {
     "Vs Los Angeles": [
@@ -59,10 +58,15 @@ matches_data = {
     ],
 }
 
-# Create DataFrames for each match and combined
+# ==========================
+# Build DataFrames
+# ==========================
 dfs_by_match = {}
 for match_name, events in matches_data.items():
-    dfm = pd.DataFrame(events, columns=["type", "x_start", "y_start", "x_end", "y_end", "video"])
+    dfm = pd.DataFrame(
+        events,
+        columns=["type", "x_start", "y_start", "x_end", "y_end", "video"]
+    )
     dfm["numero"] = np.arange(1, len(dfm) + 1)
     dfs_by_match[match_name] = dfm
 
@@ -107,17 +111,16 @@ def compute_stats(df: pd.DataFrame) -> dict:
     }
 
 # ==========================
-# Draw
+# Draw pass map
 # ==========================
 def draw_pass_map(df: pd.DataFrame, title: str):
     pitch = Pitch(pitch_type="statsbomb", pitch_color="#f5f5f5", line_color="#4a4a4a")
-    fig, ax = pitch.draw(figsize=(7.9, 5.3))  # um pouco aumentado
+    fig, ax = pitch.draw(figsize=(7.9, 5.3))
     fig.set_dpi(110)
 
     ax.axvline(x=FINAL_THIRD_LINE_X, color="#FFD54F", linewidth=1.2, alpha=0.25)
 
-    # tamanho menor da bolinha
-    START_DOT_SIZE = 55
+    START_DOT_SIZE = 45  # bolinha menor
 
     for _, row in df.iterrows():
         is_lost = "LOST" in row["type"].upper()
@@ -138,14 +141,14 @@ def draw_pass_map(df: pd.DataFrame, title: str):
             zorder=3,
         )
 
-        # bolinha no início (sem borda preta)
+        # Bolinha no início
         pitch.scatter(
             row["x_start"], row["y_start"],
             s=START_DOT_SIZE,
             marker="o",
             color=color,
             edgecolors="white",
-            linewidths=1.0,
+            linewidths=0.8,
             ax=ax,
             zorder=4,
         )
@@ -183,7 +186,15 @@ def draw_pass_map(df: pd.DataFrame, title: str):
         color="#333333",
     )
     fig.patches.append(arrow)
-    fig.text(0.5, 0.02, "Attack Direction", ha="center", va="center", fontsize=9, color="#333333")
+    fig.text(
+        0.5,
+        0.02,
+        "Attack Direction",
+        ha="center",
+        va="center",
+        fontsize=9,
+        color="#333333",
+    )
 
     fig.tight_layout()
 
@@ -222,6 +233,7 @@ col_stats, col_right = st.columns([1, 2], gap="large")
 
 with col_stats:
     st.subheader("Statistics")
+
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Total Passes", stats["total_passes"])
     c2.metric("Successful", stats["successful_passes"])
@@ -229,6 +241,7 @@ with col_stats:
     c4.metric("Unsuccessful", stats["unsuccessful_passes"])
 
     st.divider()
+
     st.subheader("Final Third")
     c7, c8, c9 = st.columns(3)
     c7.metric("Total", stats["final_third_total"])
@@ -237,6 +250,7 @@ with col_stats:
     st.metric("Accuracy", f'{stats["final_third_accuracy_pct"]:.1f}%')
 
     st.divider()
+
     st.subheader("Passes to the Box")
     d1, d2, d3 = st.columns(3)
     d1.metric("Total", stats["box_total"])
@@ -248,38 +262,38 @@ with col_right:
     st.subheader("Pass Map (click the start dot)")
 
     img_obj, ax, fig = draw_pass_map(df, title=f"Pass Map - {selected_match}")
-
-    # um pouco maior na tela
     click = streamlit_image_coordinates(img_obj, width=780)
 
     selected_pass = None
+
     if click is not None:
-        # --- clique em pixels reais da imagem ---
         real_w, real_h = img_obj.size
         disp_w, disp_h = click["width"], click["height"]
 
+        # clique na imagem exibida -> pixel real da imagem
         pixel_x = click["x"] * (real_w / disp_w)
         pixel_y = click["y"] * (real_h / disp_h)
 
-        # eixo do matplotlib tem origem embaixo
+        # inverter eixo y para coordenadas do matplotlib
         mpl_pixel_y = real_h - pixel_y
 
-        # --- Melhor seleção: comparar em PIXELS ---
-        # transforma o (x_start, y_start) de cada passe para pixel do PNG
+        # converter pixel -> coordenada do campo
+        coords_clicked = ax.transData.inverted().transform((pixel_x, mpl_pixel_y))
+        field_x, field_y = coords_clicked[0], coords_clicked[1]
+
+        # seleção pela bolinha inicial
         df_sel = df.copy()
-        start_pixels = df_sel.apply(
-            lambda r: ax.transData.transform((r["x_start"], r["y_start"])),
-            axis=1
+        df_sel["dist"] = np.sqrt(
+            (df_sel["x_start"] - field_x) ** 2 +
+            (df_sel["y_start"] - field_y) ** 2
         )
-        df_sel["sx_px"] = [p[0] for p in start_pixels]
-        df_sel["sy_px"] = [p[1] for p in start_pixels]
 
-        df_sel["dist_px"] = np.sqrt((df_sel["sx_px"] - pixel_x) ** 2 + (df_sel["sy_px"] - mpl_pixel_y) ** 2)
+        # raio maior para melhorar clique, mesmo com bolinha pequena
+        RADIUS = 7.0
+        candidates = df_sel[df_sel["dist"] < RADIUS]
 
-        RADIUS_PX = 18  # ajuste fino (em pixels) - normalmente bem melhor que "unidades do campo"
-        candidates = df_sel[df_sel["dist_px"] < RADIUS_PX]
         if not candidates.empty:
-            selected_pass = candidates.loc[candidates["dist_px"].idxmin()]
+            selected_pass = candidates.loc[candidates["dist"].idxmin()]
 
     plt.close(fig)
 
