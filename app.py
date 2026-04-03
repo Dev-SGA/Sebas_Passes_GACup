@@ -37,8 +37,8 @@ matches_data = {
         ("PASS LOST", 42.21, 41.99, 49.19, 54.13, None),
     ],
     "Vs Slavia Praha": [
-        ("PASS WON", 91.25, 28.53, 100.73, 19.39, None),
-        ("PASS WON", 95.91, 27.03, 104.72, 16.89, "videos/Sebas - KP Slavia.mp4"),
+        ("PASS WON", 91.25, 28.53, 100.73, 19.39, "videos/Sebas - KP Slavia.mp4"),
+        ("PASS WON", 95.91, 27.03, 104.72, 16.89, None),
         ("PASS WON", 103.55, 21.05, 101.23, 45.98, None),
         ("PASS WON", 85.60, 53.63, 91.42, 59.12, None),
 
