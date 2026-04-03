@@ -20,10 +20,10 @@ st.caption("Clique na bolinha no início do passe para ver o vídeo (se houver).
 # Configuration
 # ==========================
 FINAL_THIRD_LINE_X = 80
-MATCHES = ["Vs Los Angeles", "Vs Slavia Praha", "Vs Sockers", "All Matches"]
 
 # ==========================
-# DATA
+# DATA (respeitando exatamente o que você passou)
+# type, x_start, y_start, x_end, y_end, video
 # ==========================
 matches_data = {
     "Vs Los Angeles": [
@@ -36,9 +36,6 @@ matches_data = {
         ("PASS LOST", 105.05, 48.15, 100.89, 40.33, None),
         ("PASS LOST", 99.06, 56.96, 116.52, 65.43, None),
         ("PASS LOST", 42.21, 41.99, 49.19, 54.13, None),
-
-        # Exemplo com vídeo:
-        # ("PASS WON", 60.00, 20.00, 88.00, 30.00, "videos/la_pass_09.mp4"),
     ],
     "Vs Slavia Praha": [
         ("PASS WON", 91.25, 28.53, 100.73, 19.39, "videos/Sebas - KP Slavia.mp4"),
@@ -62,35 +59,37 @@ matches_data = {
     ],
 }
 
+# Create DataFrames for each match and combined
 dfs_by_match = {}
 for match_name, events in matches_data.items():
-    dfs_by_match[match_name] = pd.DataFrame(
-        events,
-        columns=["type", "x_start", "y_start", "x_end", "y_end", "video"]
-    )
-    dfs_by_match[match_name]["numero"] = np.arange(1, len(dfs_by_match[match_name]) + 1)
+    dfm = pd.DataFrame(events, columns=["type", "x_start", "y_start", "x_end", "y_end", "video"])
+    dfm["numero"] = np.arange(1, len(dfm) + 1)
+    dfs_by_match[match_name] = dfm
 
 df_all = pd.concat(dfs_by_match.values(), ignore_index=True)
 full_data = {"All Matches": df_all}
 full_data.update(dfs_by_match)
 
+# ==========================
+# Stats
+# ==========================
 def compute_stats(df: pd.DataFrame) -> dict:
     total_passes = len(df)
-    successful = int((df["type"].str.contains("WON", case=False)).sum())
-    unsuccessful = int((df["type"].str.contains("LOST", case=False)).sum())
+    successful = int(df["type"].str.contains("WON", case=False).sum())
+    unsuccessful = int(df["type"].str.contains("LOST", case=False).sum())
     accuracy = (successful / total_passes * 100.0) if total_passes else 0.0
 
     in_final_third = df["x_end"] >= FINAL_THIRD_LINE_X
     final_third_total = int(in_final_third.sum())
     final_third_success = int((in_final_third & df["type"].str.contains("WON", case=False)).sum())
     final_third_unsuccess = int((in_final_third & df["type"].str.contains("LOST", case=False)).sum())
-    final_third_accuracy = final_third_success / final_third_total * 100.0 if final_third_total else 0.0
+    final_third_accuracy = (final_third_success / final_third_total * 100.0) if final_third_total else 0.0
 
     to_box = df["x_end"] >= 100
     box_total = int(to_box.sum())
     box_success = int((to_box & df["type"].str.contains("WON", case=False)).sum())
     box_unsuccess = int((to_box & df["type"].str.contains("LOST", case=False)).sum())
-    box_accuracy = box_success / box_total * 100.0 if box_total else 0.0
+    box_accuracy = (box_success / box_total * 100.0) if box_total else 0.0
 
     return {
         "total_passes": total_passes,
@@ -107,63 +106,48 @@ def compute_stats(df: pd.DataFrame) -> dict:
         "box_accuracy_pct": round(box_accuracy, 2),
     }
 
+# ==========================
+# Draw
+# ==========================
 def draw_pass_map(df: pd.DataFrame, title: str):
     pitch = Pitch(pitch_type="statsbomb", pitch_color="#f5f5f5", line_color="#4a4a4a")
-    fig, ax = pitch.draw(figsize=(7.6, 5.1))
-    fig.set_dpi(100)
+    fig, ax = pitch.draw(figsize=(7.9, 5.3))  # um pouco aumentado
+    fig.set_dpi(110)
 
     ax.axvline(x=FINAL_THIRD_LINE_X, color="#FFD54F", linewidth=1.2, alpha=0.25)
 
+    # tamanho menor da bolinha
+    START_DOT_SIZE = 55
+
     for _, row in df.iterrows():
         is_lost = "LOST" in row["type"].upper()
-        has_vid = row["video"] is not None
 
         if is_lost:
             color = (0.95, 0.18, 0.18, 0.65)
         else:
             color = (0.18, 0.8, 0.18, 0.65)
 
-        width = 1.55
-        headwidth = 2.25
-        headlength = 2.25
-
-        # Borda preta se tem vídeo (seta)
-        if has_vid:
-            pitch.arrows(
-                row["x_start"], row["y_start"],
-                row["x_end"], row["y_end"],
-                color=(0, 0, 0, 0.95),
-                width=width + 0.9,
-                headwidth=headwidth + 1.2,
-                headlength=headlength + 1.2,
-                ax=ax,
-                zorder=2
-            )
-
         pitch.arrows(
             row["x_start"], row["y_start"],
             row["x_end"], row["y_end"],
             color=color,
-            width=width,
-            headwidth=headwidth,
-            headlength=headlength,
+            width=1.55,
+            headwidth=2.25,
+            headlength=2.25,
             ax=ax,
-            zorder=3
+            zorder=3,
         )
 
-        # ===== BOLINHA NO INÍCIO (clicável por distância) =====
-        # borda preta se tem vídeo
-        ec = "black" if has_vid else "white"
-        lw = 2.0 if has_vid else 1.2
+        # bolinha no início (sem borda preta)
         pitch.scatter(
             row["x_start"], row["y_start"],
-            s=90,
+            s=START_DOT_SIZE,
             marker="o",
             color=color,
-            edgecolors=ec,
-            linewidths=lw,
+            edgecolors="white",
+            linewidths=1.0,
             ax=ax,
-            zorder=4
+            zorder=4,
         )
 
     ax.set_title(title, fontsize=12)
@@ -171,9 +155,9 @@ def draw_pass_map(df: pd.DataFrame, title: str):
     legend_elements = [
         Line2D([0], [0], color=(0.18, 0.8, 0.18, 0.65), lw=2.5, label="Successful Pass"),
         Line2D([0], [0], color=(0.95, 0.18, 0.18, 0.65), lw=2.5, label="Unsuccessful Pass"),
-        Line2D([0], [0], marker="o", color="w", markerfacecolor=(0.6, 0.6, 0.6, 0.65),
-               markeredgecolor="white", markersize=7, label="Start point (click)"),
-        Line2D([0], [0], color="black", lw=2.5, label="Has video (black border)"),
+        Line2D([0], [0], marker="o", color="w",
+               markerfacecolor=(0.6, 0.6, 0.6, 0.65), markeredgecolor="white",
+               markersize=6, label="Start point (click)"),
     ]
     legend = ax.legend(
         handles=legend_elements,
@@ -204,7 +188,7 @@ def draw_pass_map(df: pd.DataFrame, title: str):
     fig.tight_layout()
 
     buf = BytesIO()
-    fig.savefig(buf, format="png", dpi=100, bbox_inches="tight")
+    fig.savefig(buf, format="png", dpi=110, bbox_inches="tight")
     buf.seek(0)
     img_obj = Image.open(buf)
     return img_obj, ax, fig
@@ -261,30 +245,41 @@ with col_stats:
     st.metric("Accuracy", f'{stats["box_accuracy_pct"]:.1f}%')
 
 with col_right:
-    st.subheader("Pass Map (click the start point)")
+    st.subheader("Pass Map (click the start dot)")
 
     img_obj, ax, fig = draw_pass_map(df, title=f"Pass Map - {selected_match}")
-    click = streamlit_image_coordinates(img_obj, width=740)
+
+    # um pouco maior na tela
+    click = streamlit_image_coordinates(img_obj, width=780)
 
     selected_pass = None
     if click is not None:
+        # --- clique em pixels reais da imagem ---
         real_w, real_h = img_obj.size
         disp_w, disp_h = click["width"], click["height"]
 
         pixel_x = click["x"] * (real_w / disp_w)
         pixel_y = click["y"] * (real_h / disp_h)
 
+        # eixo do matplotlib tem origem embaixo
         mpl_pixel_y = real_h - pixel_y
-        field_x, field_y = ax.transData.inverted().transform((pixel_x, mpl_pixel_y))
 
-        # ====== SELEÇÃO PELO INÍCIO DO PASSE (BOLINHA) ======
+        # --- Melhor seleção: comparar em PIXELS ---
+        # transforma o (x_start, y_start) de cada passe para pixel do PNG
         df_sel = df.copy()
-        df_sel["dist"] = np.sqrt((df_sel["x_start"] - field_x) ** 2 + (df_sel["y_start"] - field_y) ** 2)
+        start_pixels = df_sel.apply(
+            lambda r: ax.transData.transform((r["x_start"], r["y_start"])),
+            axis=1
+        )
+        df_sel["sx_px"] = [p[0] for p in start_pixels]
+        df_sel["sy_px"] = [p[1] for p in start_pixels]
 
-        RADIUS = 4.0  # menor porque agora o alvo é a bolinha
-        candidates = df_sel[df_sel["dist"] < RADIUS]
+        df_sel["dist_px"] = np.sqrt((df_sel["sx_px"] - pixel_x) ** 2 + (df_sel["sy_px"] - mpl_pixel_y) ** 2)
+
+        RADIUS_PX = 18  # ajuste fino (em pixels) - normalmente bem melhor que "unidades do campo"
+        candidates = df_sel[df_sel["dist_px"] < RADIUS_PX]
         if not candidates.empty:
-            selected_pass = candidates.loc[candidates["dist"].idxmin()]
+            selected_pass = candidates.loc[candidates["dist_px"].idxmin()]
 
     plt.close(fig)
 
