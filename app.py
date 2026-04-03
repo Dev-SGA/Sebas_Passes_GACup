@@ -27,8 +27,8 @@ FINAL_THIRD_LINE_X = 80
 matches_data = {
     "Vs Los Angeles": [
         ("PASS WON", 52.52, 13.90, 78.12, 72.42, None),
-        ("PASS WON", 98.73, 43.66, 90.42, 36.84, "videos/Sebas - KP Los Angeles.mp4"),
-        ("PASS WON", 105.55, 22.38, 99.23, 48.98, None),
+        ("PASS WON", 98.73, 43.66, 90.42, 36.84, None),
+        ("PASS WON", 105.55, 22.38, 99.23, 48.98, "videos/Sebas - KP Los Angeles.mp4"),
 
         ("PASS LOST", 72.63, 9.41, 93.08, 18.06, None),
         ("PASS LOST", 105.38, 18.06, 108.37, 30.69, None),
@@ -37,8 +37,8 @@ matches_data = {
         ("PASS LOST", 42.21, 41.99, 49.19, 54.13, None),
     ],
     "Vs Slavia Praha": [
-        ("PASS WON", 91.25, 28.53, 100.73, 19.39, "videos/Sebas - KP Slavia.mp4"),
-        ("PASS WON", 95.91, 27.03, 104.72, 16.89, None),
+        ("PASS WON", 91.25, 28.53, 100.73, 19.39, None),
+        ("PASS WON", 95.91, 27.03, 104.72, 16.89, "videos/Sebas - KP Slavia.mp4"),
         ("PASS WON", 103.55, 21.05, 101.23, 45.98, None),
         ("PASS WON", 85.60, 53.63, 91.42, 59.12, None),
 
