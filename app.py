@@ -52,8 +52,8 @@ matches_data = {
         ("PASS WON", 64.49, 35.35, 71.47, 52.63, None),
         ("PASS WON", 51.52, 26.87, 65.15, 21.05, None),
 
-        ("PASS LOST", 110.37, 13.90, 114.03, 46.32, None),
-        ("PASS LOST", 93.25, 73.08, 109.21, 42.83, "videos/Sebas - KP Sockers.mp4"),
+        ("PASS LOST", 110.37, 13.90, 114.03, 46.32, "videos/Sebas - KP Sockers.mp4"),
+        ("PASS LOST", 93.25, 73.08, 109.21, 42.83, None),
         ("PASS LOST", 79.28, 3.59, 95.24, 36.51, None),
     ],
 }
