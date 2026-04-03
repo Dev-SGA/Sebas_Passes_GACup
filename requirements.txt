@@ -1,6 +1,7 @@
 streamlit
-matplotlib
-mplsoccer
 pandas
 numpy
+matplotlib
+mplsoccer
 Pillow
+streamlit-image-coordinates
