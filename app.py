@@ -52,8 +52,8 @@ matches_data = {
         ("PASS WON", 64.49, 35.35, 71.47, 52.63, None),
         ("PASS WON", 51.52, 26.87, 65.15, 21.05, None),
 
-        ("PASS LOST", 110.37, 13.90, 114.03, 46.32, None),
-        ("PASS LOST", 93.25, 73.08, 109.21, 42.83, "videos/Sebas - KP Sockers.mp4"),
+        ("PASS LOST", 110.37, 13.90, 114.03, 46.32, "videos/Sebas - KP Sockers.mp4"),
+        ("PASS LOST", 93.25, 73.08, 109.21, 42.83, None),
         ("PASS LOST", 79.28, 3.59, 95.24, 36.51, None),
     ],
 }
@@ -124,7 +124,7 @@ def draw_pass_map(df: pd.DataFrame, title: str):
 
     for _, row in df.iterrows():
         is_lost = "LOST" in row["type"].upper()
-        has_vid = row["video"] is not None
+        has_vid = pd.notna(row["video"]) and str(row["video"]).strip() != ""
 
         if is_lost:
             color = (0.95, 0.18, 0.18, 0.65)
@@ -142,7 +142,7 @@ def draw_pass_map(df: pd.DataFrame, title: str):
             zorder=3,
         )
 
-        # anel dourado para eventos com vídeo
+        # Anel dourado apenas se houver vídeo
         if has_vid:
             pitch.scatter(
                 row["x_start"], row["y_start"],
@@ -155,7 +155,7 @@ def draw_pass_map(df: pd.DataFrame, title: str):
                 zorder=4,
             )
 
-        # bolinha principal
+        # Bolinha principal
         pitch.scatter(
             row["x_start"], row["y_start"],
             s=START_DOT_SIZE,
@@ -320,7 +320,7 @@ with col_right:
             f"End: ({selected_pass['x_end']:.2f}, {selected_pass['y_end']:.2f})"
         )
 
-        if selected_pass["video"]:
+        if pd.notna(selected_pass["video"]) and str(selected_pass["video"]).strip() != "":
             try:
                 st.video(selected_pass["video"])
             except Exception:
