@@ -32,7 +32,7 @@ MATCHES = ["Vs Los Angeles", "Vs Slavia Praha", "Vs Sockers", "All Matches"]
 matches_data = {
     "Vs Los Angeles": [
         ("PASS WON", 52.52, 13.90, 78.12, 72.42, None),
-        ("PASS WON", 98.73, 43.66, 90.42, 36.84, None),
+        ("PASS WON", 98.73, 43.66, 90.42, 36.84, "videos/Sebas - KP Los Angeles.mp4"),
         ("PASS WON", 105.55, 22.38, 99.23, 48.98, None),
 
         ("PASS LOST", 72.63, 9.41, 93.08, 18.06, None),
@@ -45,7 +45,7 @@ matches_data = {
         # ("PASS WON", 60.00, 20.00, 88.00, 30.00, "videos/la_pass_09.mp4"),
     ],
     "Vs Slavia Praha": [
-        ("PASS WON", 91.25, 28.53, 100.73, 19.39, None),
+        ("PASS WON", 91.25, 28.53, 100.73, 19.39, "videos/Sebas - KP Slavia.mp4"),
         ("PASS WON", 95.91, 27.03, 104.72, 16.89, None),
         ("PASS WON", 103.55, 21.05, 101.23, 45.98, None),
         ("PASS WON", 85.60, 53.63, 91.42, 59.12, None),
@@ -61,7 +61,7 @@ matches_data = {
         ("PASS WON", 51.52, 26.87, 65.15, 21.05, None),
 
         ("PASS LOST", 110.37, 13.90, 114.03, 46.32, None),
-        ("PASS LOST", 93.25, 73.08, 109.21, 42.83, None),
+        ("PASS LOST", 93.25, 73.08, 109.21, 42.83, "videos/Sebas - KP Sockers.mp4"),
         ("PASS LOST", 79.28, 3.59, 95.24, 36.51, None),
     ],
 }
