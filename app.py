@@ -14,7 +14,7 @@ from streamlit_image_coordinates import streamlit_image_coordinates
 # ==========================
 st.set_page_config(layout="wide", page_title="Pass Map Dashboard (Interactive)")
 st.title("Pass Map Dashboard")
-st.caption("Clique em uma seta no campo para ver o vídeo do passe (se houver).")
+st.caption("Clique na bolinha no início do passe para ver o vídeo (se houver).")
 
 # ==========================
 # Configuration
@@ -23,11 +23,7 @@ FINAL_THIRD_LINE_X = 80
 MATCHES = ["Vs Los Angeles", "Vs Slavia Praha", "Vs Sockers", "All Matches"]
 
 # ==========================
-# DATA (AGORA NO MESMO PADRÃO DOS OUTROS CÓDIGOS)
-# type, x_start, y_start, x_end, y_end, video
-# - Use "PASS WON" = passe certo
-# - Use "PASS LOST" = passe errado
-# - No campo video, coloque None ou o link/path do vídeo
+# DATA
 # ==========================
 matches_data = {
     "Vs Los Angeles": [
@@ -66,7 +62,6 @@ matches_data = {
     ],
 }
 
-# Create DataFrames for each match and combined
 dfs_by_match = {}
 for match_name, events in matches_data.items():
     dfs_by_match[match_name] = pd.DataFrame(
@@ -132,7 +127,7 @@ def draw_pass_map(df: pd.DataFrame, title: str):
         headwidth = 2.25
         headlength = 2.25
 
-        # Borda preta se tem vídeo
+        # Borda preta se tem vídeo (seta)
         if has_vid:
             pitch.arrows(
                 row["x_start"], row["y_start"],
@@ -156,11 +151,28 @@ def draw_pass_map(df: pd.DataFrame, title: str):
             zorder=3
         )
 
+        # ===== BOLINHA NO INÍCIO (clicável por distância) =====
+        # borda preta se tem vídeo
+        ec = "black" if has_vid else "white"
+        lw = 2.0 if has_vid else 1.2
+        pitch.scatter(
+            row["x_start"], row["y_start"],
+            s=90,
+            marker="o",
+            color=color,
+            edgecolors=ec,
+            linewidths=lw,
+            ax=ax,
+            zorder=4
+        )
+
     ax.set_title(title, fontsize=12)
 
     legend_elements = [
         Line2D([0], [0], color=(0.18, 0.8, 0.18, 0.65), lw=2.5, label="Successful Pass"),
         Line2D([0], [0], color=(0.95, 0.18, 0.18, 0.65), lw=2.5, label="Unsuccessful Pass"),
+        Line2D([0], [0], marker="o", color="w", markerfacecolor=(0.6, 0.6, 0.6, 0.65),
+               markeredgecolor="white", markersize=7, label="Start point (click)"),
         Line2D([0], [0], color="black", lw=2.5, label="Has video (black border)"),
     ]
     legend = ax.legend(
@@ -249,7 +261,7 @@ with col_stats:
     st.metric("Accuracy", f'{stats["box_accuracy_pct"]:.1f}%')
 
 with col_right:
-    st.subheader("Pass Map (click an arrow)")
+    st.subheader("Pass Map (click the start point)")
 
     img_obj, ax, fig = draw_pass_map(df, title=f"Pass Map - {selected_match}")
     click = streamlit_image_coordinates(img_obj, width=740)
@@ -265,13 +277,11 @@ with col_right:
         mpl_pixel_y = real_h - pixel_y
         field_x, field_y = ax.transData.inverted().transform((pixel_x, mpl_pixel_y))
 
-        # Seleção pelo meio da seta (robusto)
+        # ====== SELEÇÃO PELO INÍCIO DO PASSE (BOLINHA) ======
         df_sel = df.copy()
-        df_sel["x_mid"] = (df_sel["x_start"] + df_sel["x_end"]) / 2.0
-        df_sel["y_mid"] = (df_sel["y_start"] + df_sel["y_end"]) / 2.0
-        df_sel["dist"] = np.sqrt((df_sel["x_mid"] - field_x) ** 2 + (df_sel["y_mid"] - field_y) ** 2)
+        df_sel["dist"] = np.sqrt((df_sel["x_start"] - field_x) ** 2 + (df_sel["y_start"] - field_y) ** 2)
 
-        RADIUS = 6
+        RADIUS = 4.0  # menor porque agora o alvo é a bolinha
         candidates = df_sel[df_sel["dist"] < RADIUS]
         if not candidates.empty:
             selected_pass = candidates.loc[candidates["dist"].idxmin()]
@@ -282,7 +292,7 @@ with col_right:
     st.subheader("Video")
 
     if selected_pass is None:
-        st.info("Clique em uma seta para ver o vídeo do passe (se houver).")
+        st.info("Clique na bolinha no início do passe para ver o vídeo (se houver).")
     else:
         st.success(f"Selected pass: #{int(selected_pass['numero'])} ({selected_pass['type']})")
         st.write(
