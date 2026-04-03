@@ -52,8 +52,8 @@ matches_data = {
         ("PASS WON", 64.49, 35.35, 71.47, 52.63, None),
         ("PASS WON", 51.52, 26.87, 65.15, 21.05, None),
 
-        ("PASS LOST", 110.37, 13.90, 114.03, 46.32, "videos/Sebas - KP Sockers.mp4"),
-        ("PASS LOST", 93.25, 73.08, 109.21, 42.83, None),
+        ("PASS LOST", 110.37, 13.90, 114.03, 46.32, None),
+        ("PASS LOST", 93.25, 73.08, 109.21, 42.83, "videos/Sebas - KP Sockers.mp4"),
         ("PASS LOST", 79.28, 3.59, 95.24, 36.51, None),
     ],
 }
@@ -120,10 +120,11 @@ def draw_pass_map(df: pd.DataFrame, title: str):
 
     ax.axvline(x=FINAL_THIRD_LINE_X, color="#FFD54F", linewidth=1.2, alpha=0.25)
 
-    START_DOT_SIZE = 45  # bolinha menor
+    START_DOT_SIZE = 45
 
     for _, row in df.iterrows():
         is_lost = "LOST" in row["type"].upper()
+        has_vid = row["video"] is not None
 
         if is_lost:
             color = (0.95, 0.18, 0.18, 0.65)
@@ -141,7 +142,20 @@ def draw_pass_map(df: pd.DataFrame, title: str):
             zorder=3,
         )
 
-        # Bolinha no início
+        # anel dourado para eventos com vídeo
+        if has_vid:
+            pitch.scatter(
+                row["x_start"], row["y_start"],
+                s=95,
+                marker="o",
+                facecolors="none",
+                edgecolors="#FFD54F",
+                linewidths=2.0,
+                ax=ax,
+                zorder=4,
+            )
+
+        # bolinha principal
         pitch.scatter(
             row["x_start"], row["y_start"],
             s=START_DOT_SIZE,
@@ -150,7 +164,7 @@ def draw_pass_map(df: pd.DataFrame, title: str):
             edgecolors="white",
             linewidths=0.8,
             ax=ax,
-            zorder=4,
+            zorder=5,
         )
 
     ax.set_title(title, fontsize=12)
@@ -159,8 +173,11 @@ def draw_pass_map(df: pd.DataFrame, title: str):
         Line2D([0], [0], color=(0.18, 0.8, 0.18, 0.65), lw=2.5, label="Successful Pass"),
         Line2D([0], [0], color=(0.95, 0.18, 0.18, 0.65), lw=2.5, label="Unsuccessful Pass"),
         Line2D([0], [0], marker="o", color="w",
-               markerfacecolor=(0.6, 0.6, 0.6, 0.65), markeredgecolor="white",
+               markerfacecolor="gray", markeredgecolor="white",
                markersize=6, label="Start point (click)"),
+        Line2D([0], [0], marker="o", color="w",
+               markerfacecolor="gray", markeredgecolor="#FFD54F",
+               markeredgewidth=2, markersize=7, label="Has video"),
     ]
     legend = ax.legend(
         handles=legend_elements,
@@ -270,25 +287,19 @@ with col_right:
         real_w, real_h = img_obj.size
         disp_w, disp_h = click["width"], click["height"]
 
-        # clique na imagem exibida -> pixel real da imagem
         pixel_x = click["x"] * (real_w / disp_w)
         pixel_y = click["y"] * (real_h / disp_h)
 
-        # inverter eixo y para coordenadas do matplotlib
         mpl_pixel_y = real_h - pixel_y
-
-        # converter pixel -> coordenada do campo
         coords_clicked = ax.transData.inverted().transform((pixel_x, mpl_pixel_y))
         field_x, field_y = coords_clicked[0], coords_clicked[1]
 
-        # seleção pela bolinha inicial
         df_sel = df.copy()
         df_sel["dist"] = np.sqrt(
             (df_sel["x_start"] - field_x) ** 2 +
             (df_sel["y_start"] - field_y) ** 2
         )
 
-        # raio maior para melhorar clique, mesmo com bolinha pequena
         RADIUS = 7.0
         candidates = df_sel[df_sel["dist"] < RADIUS]
 
