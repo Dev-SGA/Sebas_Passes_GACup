@@ -27,8 +27,8 @@ FINAL_THIRD_LINE_X = 80
 matches_data = {
     "Vs Los Angeles": [
         ("PASS WON", 52.52, 13.90, 78.12, 72.42, None),
-        ("PASS WON", 98.73, 43.66, 90.42, 36.84, None),
-        ("PASS WON", 105.55, 22.38, 99.23, 48.98, "videos/Sebas - KP Los Angeles.mp4"),
+        ("PASS WON", 98.73, 43.66, 90.42, 36.84, "videos/Sebas - KP Los Angeles.mp4"),
+        ("PASS WON", 105.55, 22.38, 99.23, 48.98, None),
 
         ("PASS LOST", 72.63, 9.41, 93.08, 18.06, None),
         ("PASS LOST", 105.38, 18.06, 108.37, 30.69, None),
@@ -47,13 +47,13 @@ matches_data = {
         ("PASS LOST", 117.52, 67.59, 105.22, 25.37, None),
     ],
     "Vs Sockers": [
-        ("PASS WON", 114.36, 66.93, 104.38, 42.83, "videos/Sebas - KP Sockers.mp4"),
+        ("PASS WON", 114.36, 66.93, 104.38, 42.83, None),
         ("PASS WON", 70.97, 30.19, 77.79, 41.33, None),
         ("PASS WON", 64.49, 35.35, 71.47, 52.63, None),
         ("PASS WON", 51.52, 26.87, 65.15, 21.05, None),
 
         ("PASS LOST", 110.37, 13.90, 114.03, 46.32, None),
-        ("PASS LOST", 93.25, 73.08, 109.21, 42.83, None),
+        ("PASS LOST", 93.25, 73.08, 109.21, 42.83, "videos/Sebas - KP Sockers.mp4"),
         ("PASS LOST", 79.28, 3.59, 95.24, 36.51, None),
     ],
 }
@@ -77,11 +77,16 @@ full_data.update(dfs_by_match)
 # ==========================
 # Stats
 # ==========================
+def has_video_value(v) -> bool:
+    return pd.notna(v) and str(v).strip() != ""
+
 def compute_stats(df: pd.DataFrame) -> dict:
     total_passes = len(df)
     successful = int(df["type"].str.contains("WON", case=False).sum())
     unsuccessful = int(df["type"].str.contains("LOST", case=False).sum())
     accuracy = (successful / total_passes * 100.0) if total_passes else 0.0
+
+    key_passes = int(df["video"].apply(has_video_value).sum())
 
     in_final_third = df["x_end"] >= FINAL_THIRD_LINE_X
     final_third_total = int(in_final_third.sum())
@@ -100,6 +105,7 @@ def compute_stats(df: pd.DataFrame) -> dict:
         "successful_passes": successful,
         "unsuccessful_passes": unsuccessful,
         "accuracy_pct": round(accuracy, 2),
+        "key_passes": key_passes,
         "final_third_total": final_third_total,
         "final_third_success": final_third_success,
         "final_third_unsuccess": final_third_unsuccess,
@@ -124,7 +130,7 @@ def draw_pass_map(df: pd.DataFrame, title: str):
 
     for _, row in df.iterrows():
         is_lost = "LOST" in row["type"].upper()
-        has_vid = pd.notna(row["video"]) and str(row["video"]).strip() != ""
+        has_vid = has_video_value(row["video"])
 
         if is_lost:
             color = (0.95, 0.18, 0.18, 0.65)
@@ -251,11 +257,12 @@ col_stats, col_right = st.columns([1, 2], gap="large")
 with col_stats:
     st.subheader("Statistics")
 
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("Total Passes", stats["total_passes"])
     c2.metric("Successful", stats["successful_passes"])
     c3.metric("Accuracy", f'{stats["accuracy_pct"]:.1f}%')
     c4.metric("Unsuccessful", stats["unsuccessful_passes"])
+    c5.metric("Key Passes", stats["key_passes"])
 
     st.divider()
 
@@ -320,7 +327,7 @@ with col_right:
             f"End: ({selected_pass['x_end']:.2f}, {selected_pass['y_end']:.2f})"
         )
 
-        if pd.notna(selected_pass["video"]) and str(selected_pass["video"]).strip() != "":
+        if has_video_value(selected_pass["video"]):
             try:
                 st.video(selected_pass["video"])
             except Exception:
