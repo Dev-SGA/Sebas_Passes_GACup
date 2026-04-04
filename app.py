@@ -308,10 +308,15 @@ with col_right:
         )
 
         RADIUS = 7.0
-        candidates = df_sel[df_sel["dist"] < RADIUS]
+        candidates = df_sel[df_sel["dist"] < RADIUS].copy()
 
         if not candidates.empty:
-            selected_pass = candidates.loc[candidates["dist"].idxmin()]
+            candidates["has_video"] = candidates["video"].apply(has_video_value)
+            candidates = candidates.sort_values(
+                by=["has_video", "dist"],
+                ascending=[False, True]
+            )
+            selected_pass = candidates.iloc[0]
 
     plt.close(fig)
 
